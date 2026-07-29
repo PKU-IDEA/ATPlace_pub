@@ -1,6 +1,6 @@
 # ATPlace2.5D Public Package
 
-This repository contains a compact public package for ATPlace2.5D.
+This repository contains a compact public package for ATPlace2.5D (ICCAD 2024).
 
 ## Contents
 
@@ -22,7 +22,7 @@ Each case directory contains Bookshelf input files and two layout parameter file
 
 `pulp` may work in some environments, but it is not guaranteed to produce strictly identical legal placement or numerical values. Use `gurobipy` when reproducing reported layouts.
 
-On the 231 server, activate the reproduction environment first:
+On a Linux server, activate the reproduction environment first:
 
 ```bash
 conda activate ATPlan
