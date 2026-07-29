@@ -128,8 +128,8 @@ The visualizer reads only `layout.json`. It does not call the encrypted placemen
 ## Citation
 
 ```bibtex
-@inproceedings{wang2024atplace2,
-  title={ATPlace2. 5D: Analytical thermal-aware chiplet placement framework for large-scale 2.5 D-IC},
+@inproceedings{wang2024atplace,
+  title={ATPlace2.5D: Analytical Thermal-Aware Chiplet Placement Framework for Large-Scale 2.5D-IC},
   author={Wang, Qipan and Li, Xueqing and Jia, Tianyu and Lin, Yibo and Wang, Runsheng and Huang, Ru},
   booktitle={Proceedings of the 43rd IEEE/ACM International Conference on Computer-Aided Design},
   pages={1--9},
