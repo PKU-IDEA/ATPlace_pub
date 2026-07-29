@@ -1,6 +1,6 @@
 {
   "ILPsolver": "grb",
-  "density_weight_init": 14,
+  "density_weight_init": 10,
   "eta": 1,
   "floorplan_stages": [
     {
@@ -15,8 +15,8 @@
     }
   ],
   "overflow_init": 0.42,
-  "target_density": 0.8,
+  "target_density": 0.76,
   "temp_aware_opt": false,
   "thermal_solver": "hotspot",
-  "wl_weight": 0.6
+  "wl_weight": 0.55
 }

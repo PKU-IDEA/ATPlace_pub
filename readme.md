@@ -28,7 +28,7 @@ On the 231 server, activate the reproduction environment first:
 conda activate ATPlan
 ```
 
-Run one case as:
+Run one case directly through the shell entry:
 
 ```bash
 bash reproduce.sh Case1 wl
@@ -60,12 +60,24 @@ ATPLACE_DRY_RUN=1 bash reproduce.sh Case1 wl
 
 The case parameter files are self-contained layout settings. Do not change interposer geometry unless the target design itself changes.
 
+## Included Parameter Files
+
+The public package includes one `WL-driven.json` and one `Thermal-aware.json` for each case. These files are ordinary reproduction settings for the encrypted kernel; they are not Optuna/HPO logs and do not include experiment tables.
+
+The current public parameter files include explicit local representative settings for these successfully reproduced modes:
+
+- thermal-aware: `Case1`, `Case2`, `Case5`, `Case7`, `Case9`, `Case10`;
+- wirelength-driven: `Case3`, `Case4`, `Case8`, `Case9`, `Case10`.
+
+Some modes in the package use preserved baseline settings because the corresponding accepted representative came from a saved layout rather than a standalone parameter record. The remaining thermal-aware search targets at the time of this package update are `Case3`, `Case6`, and `Case8`.
+
 ## Thermal-Aware Mode
 
 Thermal-aware placement uses two thermal components.
 
-1. `reproduce.py` creates a compact analytic thermal model object for the selected case and passes it into the encrypted placement kernel. The training and use of this compact model happen during the thermal-aware placement flow. No external pretrained thermal-model checkpoint is required in this public package.
-2. `thermal/` contains the HotSpot executable and the default HotSpot configuration. `Thermal.py` is the helper used to generate HotSpot floorplan, layer, power-trace, and configuration files from a chiplet layout. It is intentionally kept as readable Python so thermal stack parameters can be inspected or changed without exposing the encrypted placement implementation.
+1. `reproduce.py` creates a compact analytic thermal model object for the selected case and passes it into the encrypted placement kernel. The public wrapper does not run a separate visible thermal-model training program and does not write a pretrained thermal-model checkpoint before placement starts.
+2. `thermal/` contains the HotSpot executable and the default HotSpot configuration used by the public run.
+3. `Thermal.py` is a readable reference/helper file for HotSpot-style floorplan, layer, power-trace, and configuration generation. The default public wrapper does not import this file directly, so adding print statements to `Thermal.py` is not expected to change the default `bash reproduce.sh Case1 thermal` console output.
 
 The main thermal-aware layout controls are in `cases/<CaseX>/Thermal-aware.json`:
 
@@ -79,7 +91,7 @@ Use these JSON files for ordinary parameter changes. Keep each case's `interpose
 
 ## Changing Thermal Configuration
 
-For a new thermal configuration, copy the thermal directory and point the run to it:
+For a new HotSpot configuration, copy the thermal directory and point the run to it:
 
 ```bash
 cp -R thermal thermal_custom
@@ -87,7 +99,7 @@ cp -R thermal thermal_custom
 ATPLACE_THERMAL_DIR="$PWD/thermal_custom" bash reproduce.sh Case1 thermal
 ```
 
-Use `Thermal.py` when the stack or generated HotSpot files must change. Examples include changing layer material constants, layer thicknesses, bump parameters, or how the HotSpot `.flp`, `.lcf`, and `.ptrace` files are generated. These edits affect thermal evaluation and the thermal-aware flow that depends on HotSpot output.
+Changing `thermal_custom/hotspot.config` is enough for ordinary HotSpot parameter tests. If the stack definition or generated HotSpot files must change, use `Thermal.py` as the readable starting point. Examples include changing layer material constants, layer thicknesses, bump parameters, or how the HotSpot `.flp`, `.lcf`, and `.ptrace` files are generated. When doing this, keep the encrypted placement kernel unchanged and document which generated thermal files changed.
 
 For a new case, create `cases/<NewCase>/` with matching Bookshelf-style files:
 
