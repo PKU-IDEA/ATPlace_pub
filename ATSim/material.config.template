@@ -1,0 +1,52 @@
+# Thermal conductivity in W/(m K), volumetric heat capacity in J/(m^3 K).
+# C4, TSV and Ubump retain the original area-fraction homogenized properties.
+# Copper fraction = (diameter / pitch)^2; conductivity and capacity are volume-weighted.
+# C4: 250/600 um; TSV: 10/50 um; Ubump: 25/45 um.
+
+[Substrate]
+type = Solid
+non_linear = False
+conductivity (w/(m-k)) = ${substrate_conductivity}
+volumetric heat capacity (j/(m3-k)) = ${substrate_volumetric_capacity}
+
+[Underfill]
+type = Solid
+non_linear = False
+conductivity (w/(m-k)) = ${underfill_conductivity}
+volumetric heat capacity (j/(m3-k)) = ${underfill_volumetric_capacity}
+
+[Silicon]
+type = Solid
+non_linear = False
+conductivity (w/(m-k)) = ${silicon_conductivity}
+volumetric heat capacity (j/(m3-k)) = ${silicon_volumetric_capacity}
+
+[TIM]
+type = Solid
+non_linear = False
+conductivity (w/(m-k)) = ${tim_conductivity}
+volumetric heat capacity (j/(m3-k)) = ${tim_volumetric_capacity}
+
+[Copper]
+type = Solid
+non_linear = False
+conductivity (w/(m-k)) = ${copper_conductivity}
+volumetric heat capacity (j/(m3-k)) = ${copper_volumetric_capacity}
+
+[C4]
+type = Solid
+non_linear = False
+conductivity (w/(m-k)) = ${c4_conductivity}
+volumetric heat capacity (j/(m3-k)) = ${c4_volumetric_capacity}
+
+[TSV]
+type = Solid
+non_linear = False
+conductivity (w/(m-k)) = ${tsv_conductivity}
+volumetric heat capacity (j/(m3-k)) = ${tsv_volumetric_capacity}
+
+[Ubump]
+type = Solid
+non_linear = False
+conductivity (w/(m-k)) = ${ubump_conductivity}
+volumetric heat capacity (j/(m3-k)) = ${ubump_volumetric_capacity}

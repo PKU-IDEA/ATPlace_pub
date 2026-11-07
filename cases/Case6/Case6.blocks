@@ -1,6 +1,8 @@
 NumSoftRectangularBlocks : 0
 NumHardRectilinearBlocks : 20
 NumTerminals : 0
+InterposerWidth : 49000
+InterposerHeight : 53000
 
 CPU2_0 hardrectilinear 4 (0, 0) (0, 5000) (5000, 5000) (5000, 0)
 CPU2_1 hardrectilinear 4 (0, 0) (0, 5000) (5000, 5000) (5000, 0)

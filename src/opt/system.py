@@ -3,7 +3,7 @@ from copy import deepcopy
 
 import numpy as np
 
-import Chiplet
+from . import chiplet
 
 
 class System_25D:
@@ -68,10 +68,6 @@ class System_25D:
 
     def set_connection_matrix(self, connection):
         self.connection_matrix = connection
-
-    def set_granularity(self, granularity):
-        # granularity: the minimum resolution of interposer in each direction, unit: um
-        self.granularity = granularity
 
     def set_interposer_size(self, fence, interposer):
             self.xlow, self.xhigh = fence[0], fence[1]

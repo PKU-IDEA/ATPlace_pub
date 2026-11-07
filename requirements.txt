@@ -3,3 +3,4 @@ matplotlib==3.7.2
 numpy==1.25.2
 torch==2.0.1
 tqdm==4.65.0
+pulp==3.3.1

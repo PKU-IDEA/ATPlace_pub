@@ -82,7 +82,10 @@ def parse_header(lines: list[str], i: int, headers: Headers):
     defined_headers = {
         'NumSoftRectangularBlocks': (int, 0),
         'NumHardRectilinearBlocks': (int, 0),
-        'NumTerminals': (int, 0)
+        'NumTerminals': (int, 0),
+        # Project extension: interposer dimensions in micrometers.
+        'InterposerWidth': (float, None),
+        'InterposerHeight': (float, None)
     }
 
     if len(headers.keys()) == 0:
@@ -107,8 +110,8 @@ def parse_blocks(options):
     modules: Modules = {}
     headers: Headers = {}
     file_path = options['filename_blocks']
-    f = open(file_path, "r")
-    raw_text = f.read()
+    with open(file_path, "r") as f:
+        raw_text = f.read()
     lines = re.split('\n', raw_text)
     i = 0
     while i < len(lines) and parse_header(lines, i, headers):

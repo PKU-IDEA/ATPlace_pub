@@ -1,1 +1,33 @@
+# Python caches and local environments
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Editor and OS files
 .DS_Store
+.idea/
+.vscode/
+*.swp
+*~
+
+# Generated run outputs and trained models
+/results/
+*.log
+*.pt
+*.pth
+*.npy
+*.npz
+
+# Downloaded ATSim executable (distributed by the upstream project)
+/ATSim/ATSim
+
+# Locally retained source archives
+*.tar
+*.tar.gz
+*.tgz

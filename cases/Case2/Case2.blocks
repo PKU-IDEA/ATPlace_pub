@@ -1,6 +1,8 @@
 NumSoftRectangularBlocks : 0
 NumHardRectilinearBlocks : 6
 NumTerminals : 0
+InterposerWidth : 55000
+InterposerHeight : 52000
 
 HBM_0 hardrectilinear 4 (0, 0) (0, 12000) (8000, 12000) (8000, 0)
 HBM_1 hardrectilinear 4 (0, 0) (0, 12000) (8000, 12000) (8000, 0)

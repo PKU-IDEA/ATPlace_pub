@@ -1,0 +1,40 @@
+# ATSim steady-state defaults. Runtime settings are supplied by params.json.
+# htc_top is replaced with 1 / (thermal_convection_resistance * heatsink_top_area).
+[NoPackage]
+htc_top = ${htc_top}
+htc_bot = 0
+
+[Temperature]
+ambient = ${ambient_k} K
+init = ${ambient_k} K
+
+[Simulation]
+number_of_core = ${num_threads}
+sim_mode = 0
+calc_leakage = 0
+cycles = 1
+threshold = 0.01 K
+power_type = value
+power_gran = grid
+unit_agg_method = weighted_avg
+calc_kappa_type = vr
+
+[MeshConfig]
+rows = ${num_grid_y}
+cols = ${num_grid_x}
+min_depth = 1
+max_depth = 1
+powerdens_th = 5e5
+max_thickness = 0.001
+tiers_active = 1
+tiers_bulk = 1
+tiers_chiplet = 1
+tolerance = 1e-2
+fine_grid_num = 2
+grid_expand_factor = 2
+tol_zero = 1e-12
+ratio_ignore = 0.1e-3
+
+[Solid]
+properties = type, non_linear, conductivity (w/(m-k)), volumetric heat capacity (j/(m3-k))
+

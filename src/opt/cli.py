@@ -1,115 +1,31 @@
-#!/usr/bin/env python3
 from __future__ import annotations
 
 import argparse
 import json
-import os
-import sys
+import logging
 import time
 from pathlib import Path
 
 import numpy as np
 
 
-ROOT = Path(__file__).resolve().parent
-SRC = ROOT / "src"
-sys.path.insert(0, str(SRC))
-sys.path.insert(0, str(ROOT))
-
-import Params  # noqa: E402
-from Chiplet import Chiplet  # noqa: E402
-from Interposer import Passive_Interposer  # noqa: E402
-from System import System_25D  # noqa: E402
-from ATPLACE.PlaceFlow import placeflow_core  # noqa: E402
-from utils.blocks_parser import parse_blocks  # noqa: E402
-from utils.nets_parser import parse_nets  # noqa: E402
-from utils.pl_parser import parse_pls  # noqa: E402
-
-
-CASE_INTERPOSER_SIZE = {
-    "Case1": [42000.0, 42000.0],
-    "Case2": [55000.0, 52000.0],
-    "Case3": [39000.0, 39000.0],
-    "Case4": [57000.0, 59000.0],
-    "Case5": [37000.0, 37000.0],
-    "Case6": [49000.0, 53000.0],
-    "Case7": [30000.0, 25000.0],
-    "Case8": [26000.0, 23000.0],
-    "Case9": [59000.0, 61000.0],
-    "Case10": [47000.0, 47000.0],
-}
+ROOT = Path(__file__).resolve().parents[2]
+from src import Params
+from src.thermal.atsim import temperature_target
+from src.opt.chiplet import Chiplet
+from src.opt.interposer import Passive_Interposer
+from src.opt.system import System_25D
+from src.opt.place_flow import placeflow_core
+from utils.blocks_parser import parse_blocks
+from utils.nets_parser import parse_nets
+from utils.pl_parser import parse_pls
 
 
 def build_compact_model(params: Params.Params, system: System_25D):
     if not params.temp_aware_opt:
         return None
-
-    import torch
-    import torch.nn as nn
-
-    class AnalyticThermalModel(nn.Module):
-        def __init__(self, width, height, num_chiplets, num_grid_x, num_grid_y):
-            super().__init__()
-            self.width = width
-            self.height = height
-            self.num_chiplets = num_chiplets
-            xgrid = (torch.arange(num_grid_x) + 0.5) / num_grid_x * width
-            ygrid = (torch.arange(num_grid_y) + 0.5) / num_grid_y * height
-            xgrid, ygrid = torch.meshgrid(xgrid, ygrid, indexing="ij")
-            self.register_buffer("xgrid", xgrid[None, None])
-            self.register_buffer("ygrid", ygrid[None, None])
-            self.amp = nn.Parameter(torch.ones(1) * 1e3)
-            self.bias = nn.Parameter(torch.zeros(1))
-            self.heff = nn.Parameter(torch.ones(1))
-            self.decay = nn.Parameter(torch.ones(1, num_chiplets, 1, 2))
-
-        def forward(self, input_data):
-            x, y, length, width, power = input_data
-            chips = self.num_chiplets
-            batch = x.shape[0]
-            xc = x.view(-1, chips, 1, 1)
-            yc = y.view(-1, chips, 1, 1)
-            lc = length.view(-1, chips, 1, 1)
-            wc = width.view(-1, chips, 1, 1)
-            xgrid = self.xgrid.expand(batch, chips, -1, -1)
-            ygrid = self.ygrid.expand(batch, chips, -1, -1)
-            power = power.reshape(-1, chips, 1, 1)
-            val = self._main_term(xgrid - xc, ygrid - yc, lc, wc)
-            return (power * (self.amp * val + self.bias)).sum(dim=1, keepdim=True)
-
-        def _main_term(self, xdist, ydist, length, width):
-            decay = self.decay
-            ax = decay[..., :1]
-            ay = decay[..., 1:2]
-            val = (
-                self._fabc(self.heff, ax * (length / 2 - xdist), ay * (width / 2 - ydist))
-                + self._fabc(self.heff, ax * (length / 2 - xdist), ay * (width / 2 + ydist))
-                + self._fabc(self.heff, ax * (length / 2 + xdist), ay * (width / 2 - ydist))
-                + self._fabc(self.heff, ax * (length / 2 + xdist), ay * (width / 2 + ydist))
-            )
-            return val / length / width
-
-        @staticmethod
-        def _fabc(a, b, c):
-            a = a.double()
-            b = b.double()
-            c = c.double()
-            delta = torch.sqrt(a**2 + b**2 + c**2)
-            val = (
-                b * torch.log((c + delta) / (a**2 + b**2) ** 0.5)
-                + c * torch.log((b + delta) / (a**2 + c**2) ** 0.5)
-                - a * torch.arctan(b * c / a / delta)
-            )
-            return val.float()
-
-    thermal = AnalyticThermalModel(
-        system.intp_width,
-        system.intp_height,
-        system.num_chiplets,
-        system.num_grid_x,
-        system.num_grid_y,
-    )
-    return {"Thermal": thermal}
+    from src.thermal.checkpoint import load_model
+    return {"Thermal": load_model(params.thermal_model, params, system)}
 
 
 def load_json(path: Path) -> dict:
@@ -163,12 +79,18 @@ def export_layout(best_fp, system: System_25D, params: Params.Params, case_name:
         if len(xy) >= 2 * system.num_nodes:
             for idx in range(system.num_chiplets):
                 angle = angles[idx] if idx < len(angles) else 0.0
+                width = float(system.node_size_x[idx])
+                height = float(system.node_size_y[idx])
+                # The kernel returns orientations snapped to quarter turns.
+                # Export dimensions in the final layout's coordinate axes.
+                if int(round(angle / (np.pi / 2))) % 2:
+                    width, height = height, width
                 chiplets.append({
                     "name": system.node_names[idx],
                     "x": xy[idx],
                     "y": xy[idx + system.num_nodes],
-                    "width": float(system.node_size_x[idx]),
-                    "height": float(system.node_size_y[idx]),
+                    "width": width,
+                    "height": height,
                     "angle_rad": angle,
                     "power_w": float(system.powermap[idx]) if idx < len(system.powermap) else 0.0,
                 })
@@ -183,9 +105,11 @@ def export_layout(best_fp, system: System_25D, params: Params.Params, case_name:
             "fence": [float(system.xlow), float(system.xhigh), float(system.ylow), float(system.yhigh)],
         },
         "thermal": {
+            "temperature_target": temperature_target(Path(params.thermal_solver).parent / "structure.xml.template"),
             "temp_aware_opt": bool(params.temp_aware_opt),
             "thermal_solver": str(params.thermal_solver),
-            "thermal_dir": str(params.thermal_dir),
+            "thermal_convection_resistance": float(params.thermal_convection_resistance),
+            "ambient_c": float(params.ambient),
             "num_grid_x": int(params.num_grid_x),
             "num_grid_y": int(params.num_grid_y),
         },
@@ -195,29 +119,55 @@ def export_layout(best_fp, system: System_25D, params: Params.Params, case_name:
 
 
 def normalize_stage(params: Params.Params, data: dict) -> None:
-    default_stage = (Params.Params(SRC / "params.json").floorplan_stages or [{}])[0]
-    stages = data.get("floorplan_stages") or params.floorplan_stages or [default_stage]
-    merged = []
-    for stage in stages:
-        item = dict(default_stage)
-        item.update(stage)
-        merged.append(item)
-    params.floorplan_stages = merged
+    keys = ("iteration", "learning_rate", "learning_rate_decay", "optimizer",
+            "density_weight_iterations", "sub_iterations")
+    default_stage = {key: getattr(params, key) for key in keys}
+    # Multiple stages are not fully supported by the placement loop.
+    params.floorplan_stages = [default_stage]
 
 
-def load_params(param_file: Path, case_name: str, out_dir: Path) -> Params.Params:
-    params = Params.Params(SRC / "params.json")
+def load_params(param_file: Path, case_name: str, out_dir: Path = None, mode: str = None) -> Params.Params:
+    if mode not in (None, "wl", "thermal"):
+        raise ValueError(f"Unsupported optimization mode: {mode}")
+    params = Params.Params(ROOT / "params.json")
     data = load_json(param_file)
     params.fromJson(data)
+    # Runtime flag only: configuration files cannot select the optimization mode.
+    params.temp_aware_opt = mode == "thermal"
     normalize_stage(params, data)
-    params.interposer_size = data.get("interposer_size") or CASE_INTERPOSER_SIZE[case_name]
     params.fence_width = getattr(params, "fence_width", 0.0)
     params.fence_height = getattr(params, "fence_height", 0.0)
+    if out_dir is None:
+        result_path = Path(params.result_dir.format(
+            case=case_name, mode=mode or "wl",
+            timestamp=time.strftime("%Y%m%d_%H%M%S"))).expanduser()
+        out_dir = result_path if result_path.is_absolute() else ROOT / result_path
     params.result_dir = str(out_dir)
-    params.thermal_dir = os.environ.get("ATPLACE_THERMAL_DIR", str(ROOT / "thermal")) + os.sep
-    params.ILPsolver = getattr(params, "ILPsolver", "grb")
-    params.thermal_solver = getattr(params, "thermal_solver", "hotspot")
+    case_path = Path(params.case_dir.format(case=case_name)).expanduser()
+    params.case_dir = str(case_path if case_path.is_absolute() else ROOT / case_path)
+    params.interposer_size = load_interposer_size(Path(params.case_dir), case_name)
+    solver_path = Path(params.thermal_solver).expanduser()
+    params.thermal_solver = str(solver_path if solver_path.is_absolute() else ROOT / solver_path)
+    model_path = Path(params.thermal_model.format(case=case_name)).expanduser()
+    params.thermal_model = str(model_path if model_path.is_absolute() else ROOT / model_path)
+    params.ilp_solver = getattr(params, "ilp_solver", "grb")
     return params
+
+
+def load_interposer_size(case_dir: Path, case_name: str) -> list:
+    path = case_dir / f"{case_name}.blocks"
+    _, parsed_headers = parse_blocks({"filename_blocks": str(path)})
+    headers = parsed_headers["Headers"]
+    dimensions = [headers.get("InterposerWidth"), headers.get("InterposerHeight")]
+    if any(value is None or not np.isfinite(value) or value <= 0 for value in dimensions):
+        raise ValueError(f"{path}: InterposerWidth and InterposerHeight must be finite positive numbers in micrometers")
+    return dimensions
+
+
+def default_case_dir(case_name: str) -> Path:
+    defaults = Params.Params(ROOT / "params.json")
+    path = Path(defaults.case_dir.format(case=case_name)).expanduser()
+    return path if path.is_absolute() else ROOT / path
 
 
 def build_system(case_dir: Path, case_name: str, params: Params.Params) -> System_25D:
@@ -292,9 +242,9 @@ def build_system(case_dir: Path, case_name: str, params: Params.Params) -> Syste
     system.num_grid_x = params.num_grid_x
     system.num_grid_y = params.num_grid_y
     system.initialize()
-    system.set_granularity(params.reso_interposer)
     system.area_cplt = (np.array(system.node_size_x) * np.array(system.node_size_y)).sum()
 
+    system.case_name = case_name
     system.powermap = np.zeros(num_chiplets)
     power_file = case_dir / f"{case_name}.power"
     if power_file.exists():
@@ -320,20 +270,23 @@ def unpack_result(result):
 
 
 def main() -> int:
+    logging.basicConfig(level=logging.INFO)
     parser = argparse.ArgumentParser()
     parser.add_argument("--case", required=True)
     parser.add_argument("--mode", required=True, choices=["wl", "thermal"])
-    parser.add_argument("--case-dir", required=True)
-    parser.add_argument("--param-file", required=True)
-    parser.add_argument("--out-dir", required=True)
+    parser.add_argument("--param-file", "--param_file", dest="param_file",
+                        help="Case overrides; defaults to WL-driven.json or Thermal-aware.json in opt.case_dir")
     args = parser.parse_args()
 
-    case_dir = Path(args.case_dir).resolve()
-    param_file = Path(args.param_file).resolve()
-    out_dir = Path(args.out_dir).resolve()
+    if args.param_file:
+        param_file = Path(args.param_file).expanduser().resolve()
+    else:
+        filename = "WL-driven.json" if args.mode == "wl" else "Thermal-aware.json"
+        param_file = default_case_dir(args.case) / filename
+    params = load_params(param_file, args.case, mode=args.mode)
+    case_dir = Path(params.case_dir)
+    out_dir = Path(params.result_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
-
-    params = load_params(param_file, args.case, out_dir)
     system = build_system(case_dir, args.case, params)
     compact_model = build_compact_model(params, system)
 
@@ -350,6 +303,8 @@ def main() -> int:
         "twl_m": float(hpwl) / 1e6,
         "runtime_s": time.time() - start,
         "has_best_fp": best_fp is not None,
+        "thermal_model": params.thermal_model if params.temp_aware_opt else None,
+        "thermal_convection_resistance": params.thermal_convection_resistance,
     }
     if best_fp is not None:
         layout = export_layout(best_fp, system, params, args.case, args.mode)
@@ -361,6 +316,3 @@ def main() -> int:
     print(json.dumps(summary, indent=2, ensure_ascii=False))
     return 0
 
-
-if __name__ == "__main__":
-    raise SystemExit(main())

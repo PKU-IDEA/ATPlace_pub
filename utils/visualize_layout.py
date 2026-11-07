@@ -66,7 +66,7 @@ def draw_layout(layout: dict, out_path: Path) -> None:
 
 def main() -> int:
     parser = argparse.ArgumentParser()
-    parser.add_argument("layout_json", help="Path to layout.json written by reproduce.py")
+    parser.add_argument("layout_json", help="Path to layout.json written by run_placement_opt.py")
     parser.add_argument("--out", help="Output PNG path. Defaults to layout.png beside layout.json")
     args = parser.parse_args()
 

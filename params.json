@@ -1,0 +1,192 @@
+{
+  "opt": {
+    "description": "Placement initialization, continuous optimization and legalization settings",
+    "case_dir": {
+      "description": "Case input directory; supports {case}; relative to project root",
+      "default": "cases/{case}"
+    },
+    "result_dir": {
+      "description": "Placement output directory; supports {case}, {mode}, {timestamp}; relative to project root",
+      "default": "results/{case}/opt/{mode}_{timestamp}"
+    },
+    "ilp_solver": {
+      "description": "ILP solver used. grb/gurobi with gurobipy is recommended; pulp is not guaranteed to match strict legal-placement behavior",
+      "default": "pulp"
+    },
+    "initialization_time_limit_s": {
+      "description": "Time limit in seconds for each initialization ILP attempt before continuous optimization (CBC/Gurobi)",
+      "default": 30
+    },
+    "legalization_time_limit_s": {
+      "description": "Time limit in seconds for each final legalization ILP attempt (CBC/Gurobi), shared by the initial solve and the displacement-only fallback; at most two attempts",
+      "default": 1200
+    },
+    "dis_bet_chips": {
+      "description": "Minimum edge-to-edge spacing between chiplets, typically <0.2mm, unit: um",
+      "default": 100
+    },
+    "num_bins_x": {
+      "description": "Number of bins in horizontal direction; computed by internal heuristic if not specified",
+      "default": 256
+    },
+    "num_bins_y": {
+      "description": "Number of bins in vertical direction; computed by internal heuristic if not specified",
+      "default": 256
+    },
+    "random_seed": {
+      "description": "Random seed",
+      "default": 1000
+    },
+    "perturb_flag": {
+      "description": "Add perturbation or not",
+      "default": 1
+    },
+    "stop_overflow": {
+      "description": "Stopping criteria, consider stop when the overflow reaches to a ratio",
+      "default": 0.1
+    },
+    "plot_freq": {
+      "description": "Plot and print solution frequency, <0 is not",
+      "default": -1
+    },
+    "ref_hpwl": {
+      "description": "Reference HPWL used for updating density weight",
+      "default": 1000000.0
+    },
+    "density_weight_lower_ratio": {
+      "description": "Lower bound ratio used for updating density weight",
+      "default": 0.95
+    },
+    "density_weight_upper_ratio": {
+      "description": "Upper bound ratio used for updating density weight",
+      "default": 1.05
+    },
+    "eta": {
+      "description": "Coefficient in the exp relation of theta",
+      "default": 0.5
+    },
+    "num_threads": {
+      "description": "CPU threads for PyTorch and ILP solvers",
+      "default": 64
+    },
+    "iteration": {
+      "description": "Outer iterations for the placement stage",
+      "default": 100
+    },
+    "learning_rate": {
+      "description": "Placement learning rates: [position, angle]; case files override the default",
+      "default": 0.3
+    },
+    "learning_rate_decay": {
+      "description": "Multiplier for placement learning rates per outer iteration",
+      "default": 0.996
+    },
+    "optimizer": {
+      "description": "Placement optimizer: cgm, adam, sgd, sgd_momentum or sgd_nesterov",
+      "default": "cgm"
+    },
+    "density_weight_iterations": {
+      "description": "Weight-level iterations per outer placement iteration",
+      "default": 2
+    },
+    "sub_iterations": {
+      "description": "Optimization steps per weight-level iteration",
+      "default": 5
+    }
+  },
+  "thermal": {
+    "description": "Thermal-model training, thermal objectives and ATSim evaluation settings",
+    "num_threads": {
+      "description": "Parallel core count for ATSim thermal simulations, including training label generation; independent of opt.num_threads",
+      "default": 64
+    },
+    "thermal_solver": {
+      "description": "ATSim executable path, relative to project root; sim.config.template, structure.xml.template and material.config.template must be beside the executable",
+      "default": "ATSim/ATSim"
+    },
+    "num_grid_x": {
+      "description": "Number of chip-midplane temperature samples and ATSim grid columns in the x direction",
+      "default": 64
+    },
+    "num_grid_y": {
+      "description": "Number of chip-midplane temperature samples and ATSim grid rows in the y direction",
+      "default": 64
+    },
+    "ambient": {
+      "description": "Ambient temperature of chiplet (on PCB)",
+      "default": 45
+    },
+    "thermal_convection_resistance": {
+      "description": "Total heatsink-to-ambient convection resistance in K/W; ATSim uses htc_top = 1 / (resistance * heatsink top area)",
+      "default": 0.01
+    },
+    "thermal_model": {
+      "description": "Saved ATSim chip-midplane thermal model checkpoint, relative to project root; {case} is expanded",
+      "default": "results/{case}/thermal_model.pt"
+    },
+    "training_samples": {
+      "description": "Number of independently simulated training layouts",
+      "default": 5
+    },
+    "training_test_samples": {
+      "description": "Number of held-out ATSim layouts (not used for fitting)",
+      "default": 10
+    },
+    "training_iterations": {
+      "description": "Number of Adam parameter updates",
+      "default": 1000
+    },
+    "training_learning_rate": {
+      "description": "Initial Adam learning rate",
+      "default": 0.1
+    },
+    "training_seed": {
+      "description": "Seed for random layout sampling and thermal-model fitting",
+      "default": 1234
+    },
+    "training_lr_decay_step": {
+      "description": "StepLR learning-rate decay interval in updates",
+      "default": 100
+    },
+    "training_lr_decay_gamma": {
+      "description": "StepLR learning-rate multiplier per decay interval",
+      "default": 0.95
+    },
+    "training_dataset": {
+      "description": "Optional saved dataset path; null generates fresh ATSim labels",
+      "default": null
+    },
+    "training_result_dir": {
+      "description": "Training dataset, simulation logs and report directory; supports {case} and {timestamp}",
+      "default": "results/{case}/training/{timestamp}"
+    },
+    "training_ilp_solver": {
+      "description": "Layout sampling solver: pulp or grb; null inherits opt.ilp_solver",
+      "default": null
+    },
+    "training_sampling_time_limit_s": {
+      "description": "Time limit for each layout sampling ILP, in seconds",
+      "default": 30
+    },
+    "simulation_result_dir": {
+      "description": "Output directory for run_thermal_evaluation.py; supports {case} and {timestamp}",
+      "default": "results/{case}/simulation/{timestamp}"
+    },
+    "simulation_timeout_s": {
+      "description": "Timeout for each ATSim call, including training labels, in seconds",
+      "default": 3600
+    },
+    "temp_threshold": {
+      "description": "Chip-midplane target temperature in Celsius used by the thermal penalty (not a hard upper bound)",
+      "default": 95
+    },
+    "gamma": {
+      "description": "Order of the thermal penalty",
+      "default": 4
+    },
+    "temp_weight_init": {
+      "description": "Initial thermal penalty weight coefficient before gradient normalization during placement",
+      "default": 0
+    }
+  }
+}

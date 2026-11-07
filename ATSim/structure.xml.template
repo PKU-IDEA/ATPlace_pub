@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- All dimensions are meters. Runtime placeholders are expanded by the wrapper. -->
+<Package name="ATPlace" lengthunit="m">
+    <Location offsetX="0" offsetY="0" orientation="R0"/>
+    <MaterialLib File="${material_file}"/>
+    <Component number="0" type="Bulk">
+        <Geometry Length="${interposer_width_m}" Width="${interposer_height_m}" XYorigin="Center"/>
+        <Layer name="Substrate" FillingMaterial="Substrate">
+            <Geometry Thickness="200e-6"/>
+        </Layer>
+        <Layer name="C4" FillingMaterial="C4">
+            <Geometry Thickness="70e-6"/>
+        </Layer>
+        <Layer name="Interposer" FillingMaterial="TSV">
+            <Geometry Thickness="110e-6"/>
+        </Layer>
+    </Component>
+    <Component number="1" type="Active" FillingMaterial="Underfill">
+        <Geometry Length="${interposer_width_m}" Width="${interposer_height_m}" XYorigin="Origin"/>
+        <Layer name="Bump" FillingMaterial="Underfill">
+            <Geometry Thickness="10e-6"/>
+            <Floorplan Type="Macro" File="${bump_floorplan}"/>
+            <Power File="${bump_power}"/>
+        </Layer>
+        <Layer name="Chip" FillingMaterial="Underfill">
+            <Geometry Thickness="150e-6"/>
+            <Floorplan Type="Macro" File="${chip_floorplan}"/>
+            <Power File="${chip_power}"/>
+        </Layer>
+    </Component>
+    <Component number="2" type="Bulk">
+        <Geometry Length="${interposer_width_m}" Width="${interposer_height_m}" XYorigin="Center"/>
+        <Layer name="TIM" FillingMaterial="TIM">
+            <Geometry Thickness="20e-6"/>
+        </Layer>
+    </Component>
+    <Component number="3" type="Sink" sinktype="spreader">
+        <Geometry Length="${spreader_side_m}" Width="${spreader_side_m}" XYorigin="Center"/>
+        <Layer name="Spreader" FillingMaterial="Copper">
+            <Geometry Thickness="1e-3"/>
+        </Layer>
+    </Component>
+    <Component number="4" type="Sink" sinktype="nopackage">
+        <Geometry Length="${sink_side_m}" Width="${sink_side_m}" XYorigin="Center"/>
+        <Layer name="Heatsink" FillingMaterial="Copper">
+            <Geometry Thickness="6.9e-3"/>
+        </Layer>
+    </Component>
+</Package>

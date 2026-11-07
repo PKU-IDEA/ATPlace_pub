@@ -2,7 +2,7 @@ from copy import deepcopy
 
 import numpy as np
 
-import Chiplet
+from . import chiplet
 
 
 class Passive_Interposer:
