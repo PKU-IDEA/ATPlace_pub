@@ -2,6 +2,8 @@
 
 This project is based on **ATPlace2.5D: Analytical Thermal-Aware Chiplet Placement Framework for Large-Scale 2.5D-IC** (ICCAD 2024), which presents an analytical framework for thermal-aware chiplet placement. See the [paper](https://doi.org/10.1145/3676536.3676648) and [citation](#citation).
 
+**Thermal simulation update:** This version uses ATSim in place of the original HotSpot simulator. In a Case1 comparison using the same physical model, boundary conditions and temperature sampling locations, ATSim agreed more closely with a COMSOL reference solution than HotSpot did. Consequently, temperatures reported by this version may differ from those in the paper.
+
 ## Project structure
 
 ```text
