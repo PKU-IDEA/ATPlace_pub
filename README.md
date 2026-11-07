@@ -2,7 +2,7 @@
 
 This project is based on **ATPlace2.5D: Analytical Thermal-Aware Chiplet Placement Framework for Large-Scale 2.5D-IC** (ICCAD 2024), which presents an analytical framework for thermal-aware chiplet placement. See the [paper](https://doi.org/10.1145/3676536.3676648) and [citation](#citation).
 
-**Thermal simulation update:** This version uses ATSim in place of the original HotSpot simulator. In a Case1 comparison using the same physical model, boundary conditions and temperature sampling locations, ATSim agreed more closely with a COMSOL reference solution than HotSpot did. Consequently, temperatures reported by this version may differ from those in the paper.
+**Thermal simulation update:** This version uses ATSim in place of the original HotSpot simulator. In comparisons using the same physical model, boundary conditions and temperature sampling locations, ATSim agreed more closely with COMSOL reference solutions than HotSpot did. Consequently, temperature and thermal-aware optimization results reported by this version may differ from those in the paper.
 
 ## Project structure
 
@@ -161,7 +161,10 @@ Chiplet reflection is disabled internally. Warpage optimization is not included.
 
 `opt.num_threads` controls CPU threads for continuous optimization and the ILP solvers. Independently, `thermal.num_threads` controls ATSim's `number_of_core` during evaluation and training label generation. Individual ATSim stages can still run serially. Placement and thermal-model training run on the CPU; the CUDA path is incomplete.
 
-Placement prints INFO-level iteration metrics to the console. CBC/Gurobi solver logs are enabled for initialization, legalization and thermal-training layout sampling. ATSim output is saved in each simulation directory’s `stdout.log` and `stderr.log` rather than printed to the console.
+Placement suppresses INFO-level iteration metrics and CBC/Gurobi solver logs during initialization and legalization, while retaining progress bars, stage status and the final summary. CBC/Gurobi solver logs are also disabled for thermal-training layout sampling; sample temperatures and training progress remain visible. ATSim output is saved in each simulation directory’s `stdout.log` and `stderr.log` rather than printed to the console.
+
+`opt.random_seed` seeds NumPy, PyTorch and the initialization/legalization ILP solvers. Training layout sampling uses `thermal.training_seed` for its ILP solver. CBC receives both `randomSeed` and `randomCbcSeed` (configured zero maps to 1 to avoid clock-based seeding); Gurobi receives `Seed`. Fixed seeds do not guarantee identical results with parallel or time-limited solving.
+
 
 
 Density targets the actual average occupied area, and wirelength uses the implemented orientation-aware formula. Net-degree filtering is not implemented. The former `gpu`, `target_density`, `wirelength`, `ignore_net_degree`, `warp_threshold`, `random_center_init_flag`, `flip_opt`, `warp_aware_opt`, `warp_weight_init`, and `floorplan_stages` options are rejected in configuration files. Unsupported branches are removed or their behavior is fixed in the source.
@@ -239,6 +242,10 @@ python -m unittest src.thermal.test_pipeline -v
 Tests cover configuration loading, checkpoint I/O, input gradients, physical-setting compatibility, ATSim parameters and grid orientation. Evaluate model accuracy against ATSim using independent test layouts; these errors do not measure agreement with physical chip measurements.
 
 `.gitignore` excludes generated results, models, datasets, logs, caches and local environments. No pretrained model is included; train one before running thermal-aware placement.
+
+## License
+
+This project is licensed under the [MIT License](LICENSE). Separately downloaded software, including ATSim, remains subject to its upstream license terms.
 
 ## Citation
 

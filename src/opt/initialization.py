@@ -58,7 +58,7 @@ def calc_clusters(system, theta):
     return connect_matrix
 
 
-def Init_woflip_pulp(system, max_size, overlap_ratio=0.1, TimeLimit=1e3, OutputFlag=1, num_threads=None):
+def Init_woflip_pulp(system, max_size, overlap_ratio=0.1, TimeLimit=1e3, OutputFlag=0, num_threads=None, random_seed=None):
     t1 = time.time()
     # Create the model
     model = pulp.LpProblem("initialization", pulp.LpMinimize)
@@ -159,7 +159,9 @@ def Init_woflip_pulp(system, max_size, overlap_ratio=0.1, TimeLimit=1e3, OutputF
     # Solve the problem
     # Note: PuLP doesn't have built-in time limits for all solvers
     # Using CBC solver which is commonly available
-    solver = pulp.PULP_CBC_CMD(msg=OutputFlag, timeLimit=TimeLimit, threads=num_threads)
+    # CBC's CLP randomSeed=0 selects a clock-based seed; use 1 for configured zero.
+    options = [] if random_seed is None else [f'randomSeed {random_seed or 1}', f'randomCbcSeed {random_seed or 1}']
+    solver = pulp.PULP_CBC_CMD(msg=OutputFlag, timeLimit=TimeLimit, threads=num_threads, options=options)
     model.solve(solver)
     
     print(f"Optimize takes {time.time()-t1:.2e} s")
@@ -188,13 +190,15 @@ def Init_woflip_pulp(system, max_size, overlap_ratio=0.1, TimeLimit=1e3, OutputF
     
     return [[init_pos[0], init_pos[1]], init_angle]
 
-def Init_woflip_grb(system, max_size, overlap_ratio=0.1, TimeLimit=1e3, OutputFlag=1, num_threads=None):
+def Init_woflip_grb(system, max_size, overlap_ratio=0.1, TimeLimit=1e3, OutputFlag=0, num_threads=None, random_seed=None):
     t1 = time.time()
     gpmodel = gp.Model("initialization")
     gpmodel.setParam("OutputFlag", OutputFlag)
     gpmodel.setParam('TimeLimit', TimeLimit)
     if num_threads is not None:
         gpmodel.setParam('Threads', num_threads)
+    if random_seed is not None:
+        gpmodel.setParam('Seed', random_seed)
 
     num_chiplets = system.num_chiplets
     num_nodes = system.num_nodes

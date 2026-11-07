@@ -41,9 +41,13 @@ def sample_layout(system, params, rng):
             problem += pulp.lpSum(flags) <= 3
     problem += pulp.lpSum(objective)
     if params.ilp_solver == 'pulp':
-        solver = pulp.PULP_CBC_CMD(msg=True, timeLimit=params.training_sampling_time_limit_s, threads=params.num_threads)
+        # Configure both LP tie-breaking and MIP heuristic seeds; zero must not select clock time.
+        cbc_seed = params.training_seed or 1
+        solver = pulp.PULP_CBC_CMD(msg=False, timeLimit=params.training_sampling_time_limit_s,
+                                  threads=params.num_threads,
+                                  options=[f'randomSeed {cbc_seed}', f'randomCbcSeed {cbc_seed}'])
     elif params.ilp_solver == 'grb':
-        solver = pulp.GUROBI(msg=True, timeLimit=params.training_sampling_time_limit_s, Threads=params.num_threads)
+        solver = pulp.GUROBI(msg=False, timeLimit=params.training_sampling_time_limit_s, Threads=params.num_threads, Seed=params.training_seed)
     else:
         raise ValueError("ilp_solver must be grb or pulp")
     problem.solve(solver)

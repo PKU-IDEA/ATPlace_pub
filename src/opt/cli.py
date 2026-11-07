@@ -270,7 +270,7 @@ def unpack_result(result):
 
 
 def main() -> int:
-    logging.basicConfig(level=logging.INFO)
+    logging.basicConfig(level=logging.WARNING)
     parser = argparse.ArgumentParser()
     parser.add_argument("--case", required=True)
     parser.add_argument("--mode", required=True, choices=["wl", "thermal"])

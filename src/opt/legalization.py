@@ -6,21 +6,21 @@ from gurobipy import GRB
 from .initialization import calc_clusters
 
 
-def Legalization(system, solver, wl_weight, init_poses, init_sizes, TimeLimit=1e2, OutputFlag=1, num_threads=None):
+def Legalization(system, solver, wl_weight, init_poses, init_sizes, TimeLimit=1e2, OutputFlag=0, num_threads=None, random_seed=None):
     if solver.lower()=='pulp':
         return Legalization_pulp(
             system, wl_weight, init_poses, init_sizes,
-            TimeLimit=TimeLimit, OutputFlag=OutputFlag, num_threads=num_threads
+            TimeLimit=TimeLimit, OutputFlag=OutputFlag, num_threads=num_threads, random_seed=random_seed
         )
     elif solver.lower() in ('grb','gurobi'):
         return Legalization_grb(
             system, wl_weight, init_poses, init_sizes,
-            TimeLimit=TimeLimit, OutputFlag=OutputFlag, num_threads=num_threads
+            TimeLimit=TimeLimit, OutputFlag=OutputFlag, num_threads=num_threads, random_seed=random_seed
         )
     else:
         raise ValueError(f"Only <pulp>/<grb> supported for ILP, rather than {solver}")
         
-def Legalization_pulp(system, wl_weight, legal_pos, legal_size, TimeLimit=1e2, OutputFlag=1, num_threads=None):
+def Legalization_pulp(system, wl_weight, legal_pos, legal_size, TimeLimit=1e2, OutputFlag=0, num_threads=None, random_seed=None):
     num_chiplets = system.num_chiplets
     num_nodes = system.num_nodes
     cos_legal = np.cos(system.node_orient).reshape(-1, 1)
@@ -116,7 +116,9 @@ def Legalization_pulp(system, wl_weight, legal_pos, legal_size, TimeLimit=1e2, O
             prob += delta1 + delta2 + delta3 + delta4 <= 3
 
     # Solve with PuLP solver
-    solver = pulp.PULP_CBC_CMD(msg=OutputFlag, timeLimit=TimeLimit, threads=num_threads)
+    # CBC's CLP randomSeed=0 selects a clock-based seed; use 1 for configured zero.
+    options = [] if random_seed is None else [f'randomSeed {random_seed or 1}', f'randomCbcSeed {random_seed or 1}']
+    solver = pulp.PULP_CBC_CMD(msg=OutputFlag, timeLimit=TimeLimit, threads=num_threads, options=options)
     prob.solve(solver)
     
     new_pos = np.zeros((2, num_chiplets))
@@ -133,13 +135,15 @@ def Legalization_pulp(system, wl_weight, legal_pos, legal_size, TimeLimit=1e2, O
     
     return new_pos
 
-def Legalization_grb(system, wl_weight, legal_pos, legal_size, TimeLimit=1e2, OutputFlag=1, num_threads=None):
+def Legalization_grb(system, wl_weight, legal_pos, legal_size, TimeLimit=1e2, OutputFlag=0, num_threads=None, random_seed=None):
     
     legalizer = gp.Model("legalization")
     legalizer.setParam("OutputFlag", OutputFlag)
     legalizer.setParam('TimeLimit', TimeLimit)
     if num_threads is not None:
         legalizer.setParam('Threads', num_threads)
+    if random_seed is not None:
+        legalizer.setParam('Seed', random_seed)
 
     num_chiplets = system.num_chiplets
     num_nodes = system.num_nodes

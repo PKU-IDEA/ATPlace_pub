@@ -15,7 +15,7 @@
     "optimizer": "cgm"
   },
   "thermal": {
-    "temp_threshold": 68,
+    "temp_threshold": 70,
     "gamma": 2,
     "temp_weight_init": 10302
   }

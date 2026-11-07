@@ -1,6 +1,6 @@
 {
   "opt": {
-    "ilp_solver": "pulp",
+    "ilp_solver": "grb",
     "density_weight_init": 2.735,
     "eta": 0.29958,
     "overflow_init": 0.385,

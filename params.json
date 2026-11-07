@@ -11,7 +11,7 @@
     },
     "ilp_solver": {
       "description": "ILP solver used. grb/gurobi with gurobipy is recommended; pulp is not guaranteed to match strict legal-placement behavior",
-      "default": "pulp"
+      "default": "grb"
     },
     "initialization_time_limit_s": {
       "description": "Time limit in seconds for each initialization ILP attempt before continuous optimization (CBC/Gurobi)",
@@ -34,7 +34,7 @@
       "default": 256
     },
     "random_seed": {
-      "description": "Random seed",
+      "description": "Random seed for NumPy, PyTorch and ILP solvers",
       "default": 1000
     },
     "perturb_flag": {
@@ -130,7 +130,7 @@
     },
     "training_test_samples": {
       "description": "Number of held-out ATSim layouts (not used for fitting)",
-      "default": 10
+      "default": 5
     },
     "training_iterations": {
       "description": "Number of Adam parameter updates",

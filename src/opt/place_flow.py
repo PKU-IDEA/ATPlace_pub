@@ -32,9 +32,9 @@ def placeflow_core(params, system, compact_model=None):
     # Chiplet reflection is disabled; initialization optimizes positions and rotations only.
     def find_init(params):
         if params.ilp_solver == 'pulp':
-            res = Init_woflip_pulp(system, max_intp_size, params.overflow_init, TimeLimit=params.initialization_time_limit_s, OutputFlag=1, num_threads=params.num_threads)
+            res = Init_woflip_pulp(system, max_intp_size, params.overflow_init, TimeLimit=params.initialization_time_limit_s, OutputFlag=0, num_threads=params.num_threads, random_seed=params.random_seed)
         elif params.ilp_solver == 'grb':
-            res = Init_woflip_grb(system, max_intp_size, params.overflow_init, TimeLimit=params.initialization_time_limit_s, OutputFlag=1, num_threads=params.num_threads)
+            res = Init_woflip_grb(system, max_intp_size, params.overflow_init, TimeLimit=params.initialization_time_limit_s, OutputFlag=0, num_threads=params.num_threads, random_seed=params.random_seed)
         return res
 
     init_res = find_init(params)
@@ -46,6 +46,7 @@ def placeflow_core(params, system, compact_model=None):
 
     system.node_x[:num_chiplets] = init_pos[0]
     system.node_y[:num_chiplets] = init_pos[1]
+    np.random.seed(params.random_seed)
     system.node_orient[:num_chiplets] = init_angle + np.pi * 0.1 * np.random.randn(num_chiplets)
     
     placer = NonlinearPlace(params, system)
@@ -75,7 +76,7 @@ def placeflow_core(params, system, compact_model=None):
         final_pos = Legalization(
             legal_system, params.ilp_solver, params.wl_weight, [[x_init, y_init]], 
             [size_x+params.dis_bet_chips, size_y+params.dis_bet_chips], 
-            TimeLimit=params.legalization_time_limit_s, num_threads=params.num_threads
+            TimeLimit=params.legalization_time_limit_s, num_threads=params.num_threads, random_seed=params.random_seed
         )
 
         if final_pos is None:
@@ -83,7 +84,7 @@ def placeflow_core(params, system, compact_model=None):
             final_pos = Legalization(
                 legal_system, params.ilp_solver, 0, [[x_init, y_init]],
                 [size_x+params.dis_bet_chips, size_y+params.dis_bet_chips],
-                TimeLimit=params.legalization_time_limit_s, num_threads=params.num_threads
+                TimeLimit=params.legalization_time_limit_s, num_threads=params.num_threads, random_seed=params.random_seed
             )
             
         if final_pos is None:
