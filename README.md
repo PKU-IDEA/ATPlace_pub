@@ -1,6 +1,6 @@
 # ATPlace2.5D
 
-Chiplet placement optimization and thermal-model training. Placement uses editable Python source code. The compact thermal model is fitted to ATSim temperature labels and loaded by the placement optimizer.
+This project is based on **ATPlace2.5D: Analytical Thermal-Aware Chiplet Placement Framework for Large-Scale 2.5D-IC** (ICCAD 2024), which presents an analytical framework for thermal-aware chiplet placement. See the [paper](https://doi.org/10.1145/3676536.3676648) and [citation](#citation).
 
 ## Project structure
 
